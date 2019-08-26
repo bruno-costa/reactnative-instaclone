@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {View, FlatList} from 'react-native';
 
 import {Post, Header, Avatar, Name, Description, Loading} from './styles';
@@ -13,9 +13,16 @@ export default function Feed() {
   const [total, setTotal] = useState(Infinity);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [itemChanged, setItemChanged] = useState([]);
+
+  useEffect(() => {
+    loadPage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadPage(pageNumber = page, shoudRefresh = false) {
-    if (total <= page * PER_PAGE) {
+    console.log({shoudRefresh, pageNumber, feed});
+    if (total <= (page - 1) * PER_PAGE) {
       return;
     }
 
@@ -29,6 +36,7 @@ export default function Feed() {
     const totalItems = response.headers.get('X-Total-Count');
 
     setTotal(totalItems * 1);
+    console.log(shoudRefresh, shoudRefresh ? data : [...feed, ...data]);
     setFeed(shoudRefresh ? data : [...feed, ...data]);
     setPage(pageNumber + 1);
     setLoading(false);
@@ -40,9 +48,8 @@ export default function Feed() {
     setRefreshing(false);
   }
 
-  useEffect(() => {
-    loadPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleViewableItemsChanged = useCallback(({changed}) => {
+    setItemChanged(changed.map(({item}) => item.id));
   }, []);
 
   return (
@@ -55,6 +62,8 @@ export default function Feed() {
         onRefresh={refreshList}
         refreshing={refreshing}
         ListFooterComponent={loading && <Loading />}
+        onViewableItemsChanged={handleViewableItemsChanged}
+        viewabilityConfig={{viewAreaCoveragePercentThreshold: 20}}
         renderItem={({item}) => (
           <Post>
             <Header>
@@ -62,6 +71,7 @@ export default function Feed() {
               <Name>{item.author.name}</Name>
             </Header>
             <LazyImage
+              loadImage={itemChanged.includes(item.id)}
               preSource={{uri: item.small}}
               aspectRatio={item.aspectRatio}
               source={{uri: item.image}}
