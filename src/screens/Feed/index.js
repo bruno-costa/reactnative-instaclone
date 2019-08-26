@@ -1,15 +1,9 @@
 import React, {useState, useEffect} from 'react';
 import {View, FlatList} from 'react-native';
 
-import {
-  Post,
-  Header,
-  Avatar,
-  Name,
-  PostImage,
-  Description,
-  Loading,
-} from './styles';
+import {Post, Header, Avatar, Name, Description, Loading} from './styles';
+
+import LazyImage from '../../components/LazyImage';
 
 const PER_PAGE = 5;
 
@@ -67,7 +61,11 @@ export default function Feed() {
               <Avatar source={{uri: item.author.avatar}} />
               <Name>{item.author.name}</Name>
             </Header>
-            <PostImage ratio={item.aspectRatio} source={{uri: item.image}} />
+            <LazyImage
+              preSource={{uri: item.small}}
+              aspectRatio={item.aspectRatio}
+              source={{uri: item.image}}
+            />
             <Description>
               <Name>{item.author.name}</Name>
               {item.description}
